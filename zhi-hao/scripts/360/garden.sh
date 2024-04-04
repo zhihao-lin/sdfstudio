@@ -14,7 +14,7 @@ ns-train bakedsdf-mlp --vis wandb \
 ns-extract-mesh --load-config /hdd/sdfstudio/outputs/garden/240327_bakedsdf-mlp_colmap_ns/bakedsdf-mlp/2024-03-27_105716/config.yml \
     --output-path /hdd/sdfstudio/outputs/garden/240327_bakedsdf-mlp_colmap_ns/bakedsdf-mlp/2024-03-27_105716/mesh.ply \
     --bounding-box-min -2.0 -2.0 -2.0 --bounding-box-max 2.0 2.0 2.0 \
-    --resolution 4096 --marching_cube_threshold 0.001 --create_visibility_mask True
+    --resolution 4096 --marching_cube_threshold 0.001 --create_visibility_mask True --simplify-mesh True
 
 # rendering
 # ns-render-mesh --meshfile meshes/bakedsdf-mlp-garden-4096.ply --traj ellipse --fps 60 --num_views 480 --output_path renders/garden.mp4 mipnerf360-data --data data/nerfstudio-data-mipnerf360/garden
