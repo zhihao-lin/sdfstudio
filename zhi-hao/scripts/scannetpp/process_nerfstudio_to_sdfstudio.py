@@ -127,7 +127,7 @@ def main(args):
     if args.mono_prior:
         # get smallest side to generate square crop
         target_crop = min(h, w)
-        tar_h = tar_w = 384 * args.crop_mult
+        tar_h = tar_w = args.img_size
         rgb_trans = transforms.Compose(
             [transforms.CenterCrop(target_crop), transforms.Resize((tar_h, tar_w), interpolation=PIL.Image.BILINEAR)]
         )
@@ -222,7 +222,7 @@ def main(args):
         print("Generating mono depth...")
         os.system(
             f"python scripts/datasets/extract_monocular_cues.py \
-            --omnidata_path {args.omnidata_path} \
+            --omnidata_path {args.omnidata_path} --img_size {args.img_size} \
             --pretrained_model {args.pretrained_models} \
             --img_path {output_dir} --output_path {output_dir} \
             --task depth"
@@ -230,7 +230,7 @@ def main(args):
         print("Generating mono normal...")
         os.system(
             f"python scripts/datasets/extract_monocular_cues.py \
-            --omnidata_path {args.omnidata_path} \
+            --omnidata_path {args.omnidata_path} --img_size {args.img_size} \
             --pretrained_model {args.pretrained_models} \
             --img_path {output_dir} --output_path {output_dir} \
             --task normal"
@@ -273,11 +273,7 @@ if __name__ == "__main__":
         help="Whether to generate mono-prior depths and normals. " "If enabled, the images will be cropped to 384*384",
     )
     parser.add_argument(
-        "--crop-mult",
-        dest="crop_mult",
-        type=int,
-        default=1,
-        help="image size will be resized to crop_mult*384, only take effect when enabling mono-prior",
+        '--img_size', type=int, default=384, help='image size should be 128*k'
     )
     parser.add_argument(
         "--omnidata-path",

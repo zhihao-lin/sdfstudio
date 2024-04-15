@@ -24,8 +24,8 @@ SDFSTUDIO_ROOT='/hdd/sdfstudio'
 
 # get meta_data.json 
 python zhi-hao/scripts/scannetpp/process_nerfstudio_to_sdfstudio.py \
-    --data  $SCANNETPP_DATA_DIR \
-    --output-dir "${SCANNETPP_ROOT}/data/${SCENE}/sdfstudio" \
+    --data  $SCANNETPP_DATA_DIR --img_size 1024 \
+    --output-dir "${SCANNETPP_ROOT}/data/${SCENE}/sdfstudio-1024" \
     --data-type colmap --scene-type indoor --mono-prior \
     --omnidata-path /hdd/omnidata/omnidata_tools/torch/ \
     --pretrained-models /hdd/omnidata/omnidata_tools/torch/pretrained_models
