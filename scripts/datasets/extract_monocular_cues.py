@@ -31,7 +31,6 @@ parser.set_defaults(im_name="NONE")
 parser.add_argument("--output_path", dest="output_path", help="path to where output image should be stored")
 parser.set_defaults(store_name="NONE")
 
-parser.add_argument('--img_size', type=int, default=384, help='image size')
 args = parser.parse_args()
 
 root_dir = args.pretrained_models
@@ -51,7 +50,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 # get target task and model
 if args.task == "normal":
-    image_size = args.img_size
+    image_size = 384
 
     ## Version 1 model
     # pretrained_weights_path = root_dir + 'omnidata_unet_normal_v1.pth'
@@ -86,7 +85,7 @@ if args.task == "normal":
     )
 
 elif args.task == "depth":
-    image_size = args.img_size
+    image_size = 384
     pretrained_weights_path = os.path.join(root_dir, "omnidata_dpt_depth_v2.ckpt")  # 'omnidata_dpt_depth_v1.ckpt'
     # model = DPTDepthModel(backbone='vitl16_384') # DPT Large
     model = DPTDepthModel(backbone="vitb_rn50_384")  # DPT Hybrid
@@ -147,8 +146,8 @@ def save_outputs(img_path, output_file_name):
         img = Image.open(img_path)
         H, W = img.size[1], img.size[0]
         assert H == W, "Image should be square"
-        assert H % 128 == 0, "Image size should be divisible by 128"
-        # scale_factor = H // 384
+        assert H % 384 == 0, "Image size should be divisible by 384"
+        scale_factor = H // 384
 
         img_tensor = trans_totensor(img)[:3].unsqueeze(0).to(device)
 
@@ -158,15 +157,15 @@ def save_outputs(img_path, output_file_name):
         output = model(img_tensor).clamp(min=0, max=1)
 
         if args.task == "depth":
-            # if scale_factor > 1:
-            #     output = F.interpolate(output.unsqueeze(0), scale_factor=scale_factor, mode="nearest").squeeze(0)
+            if scale_factor > 1:
+                output = F.interpolate(output.unsqueeze(0), scale_factor=scale_factor, mode="nearest").squeeze(0)
             output = output.clamp(0, 1)
 
             np.save(save_path.replace(".png", ".npy"), output.detach().cpu().numpy()[0])
             plt.imsave(save_path, output.detach().cpu().squeeze(), cmap="viridis")
         else:
-            # if scale_factor > 1:
-            #     output = torch.nn.functional.interpolate(output, scale_factor=scale_factor, mode="nearest")
+            if scale_factor > 1:
+                output = torch.nn.functional.interpolate(output, scale_factor=scale_factor, mode="nearest")
             np.save(save_path.replace(".png", ".npy"), output.detach().cpu().numpy()[0])
             trans_topil(output[0]).save(save_path)
 

@@ -18,12 +18,11 @@ Semantic dataset.
 
 from typing import Dict
 
-import numpy as np
 import torch
-from torch.utils.data import Dataset
-
+import numpy as np
 from nerfstudio.data.dataparsers.base_dataparser import DataparserOutputs
 from nerfstudio.data.datasets.base_dataset import InputDataset
+from torch.utils.data import Dataset
 
 
 class PanopticDataset(InputDataset):

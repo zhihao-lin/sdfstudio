@@ -1,10 +1,11 @@
 from pathlib import Path
 
 import numpy as np
-import pymeshlab
+
 import torch
 import trimesh
 from skimage import measure
+import pymeshlab
 
 avg_pool_3d = torch.nn.AvgPool3d(2, stride=2)
 upsample = torch.nn.Upsample(scale_factor=2, mode="nearest")
@@ -248,7 +249,7 @@ def get_surface_sliding_with_contraction(
     for i in range(N):
         for j in range(N):
             for k in range(N):
-                print(i, j, k)
+                # print(i, j, k)
                 x_min, x_max = xs[i], xs[i + 1]
                 y_min, y_max = ys[j], ys[j + 1]
                 z_min, z_max = zs[k], zs[k + 1]
@@ -278,10 +279,10 @@ def get_surface_sliding_with_contraction(
                 points = points.reshape(-1, 3)
                 valid_mask = current_mask.reshape(-1) > 0
                 pts_to_eval = points[valid_mask]
-                print(current_mask.float().mean())
+                # print(current_mask.float().mean())
 
                 pts_sdf = torch.ones_like(points[..., 0]) * 100.0
-                print(pts_sdf.shape, pts_to_eval.shape, points.shape)
+                # print(pts_sdf.shape, pts_to_eval.shape, points.shape)
                 if pts_to_eval.shape[0] > 0:
                     pts_sdf_eval = evaluate(pts_to_eval.contiguous())
                     pts_sdf[valid_mask.reshape(-1)] = pts_sdf_eval
@@ -337,5 +338,5 @@ def get_surface_sliding_with_contraction(
             ms.load_new_mesh(filename)
 
             print("simply mesh")
-            ms.meshing_decimation_quadric_edge_collapse(targetfacenum=2000000)
+            ms.simplification_quadric_edge_collapse_decimation(targetfacenum=2000000)
             ms.save_current_mesh(filename_simplify, save_face_color=False)

@@ -31,11 +31,7 @@ from nerfstudio.field_components.embedding import Embedding
 from nerfstudio.field_components.field_heads import FieldHeadNames
 from nerfstudio.fields.base_field import Field
 
-try:
-    import tinycudann as tcnn
-except ImportError:
-    # tinycudann module doesn't exist
-    pass
+import tinycudann as tcnn
 
 
 def get_normalized_directions(directions: TensorType["bs":..., 3]):

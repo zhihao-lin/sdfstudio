@@ -46,7 +46,6 @@ from nerfstudio.data.dataparsers.mipnerf360_dataparser import Mipnerf360DataPars
 from nerfstudio.data.dataparsers.monosdf_dataparser import MonoSDFDataParserConfig
 from nerfstudio.data.dataparsers.nerfstudio_dataparser import NerfstudioDataParserConfig
 from nerfstudio.data.dataparsers.panoptic_dataparser import PanopticDataParserConfig
-
 # from nerfstudio.data.dataparsers.nuscenes_dataparser import NuScenesDataParserConfig
 from nerfstudio.data.dataparsers.phototourism_dataparser import (
     PhototourismDataParserConfig,

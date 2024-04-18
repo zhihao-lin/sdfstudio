@@ -24,8 +24,8 @@ from typing import Dict, List, Tuple, Type
 import numpy as np
 import torch
 from torch.nn import Parameter
-from torchmetrics.image import PeakSignalNoiseRatio
 from torchmetrics.functional import structural_similarity_index_measure
+from torchmetrics.image import PeakSignalNoiseRatio
 from torchmetrics.image.lpip import LearnedPerceptualImagePatchSimilarity
 from typing_extensions import Literal
 
@@ -41,8 +41,12 @@ from nerfstudio.fields.density_fields import HashMLPDensityField
 from nerfstudio.fields.nerfacto_field import TCNNNerfactoField
 from nerfstudio.model_components.losses import (
     MSELoss,
+    ScaleAndShiftInvariantLoss,
+    SCELoss,
+    compute_scale_and_shift,
     distortion_loss,
     interlevel_loss,
+    monosdf_normal_loss,
     orientation_loss,
     pred_normal_loss,
 )
@@ -52,12 +56,14 @@ from nerfstudio.model_components.renderers import (
     DepthRenderer,
     NormalsRenderer,
     RGBRenderer,
+    SemanticRenderer,
 )
 from nerfstudio.model_components.scene_colliders import NearFarCollider
 from nerfstudio.models.base_model import Model, ModelConfig
 from nerfstudio.utils import colormaps
 from nerfstudio.utils.colors import get_color
 
+# rom torch_scatter import scatter_mean
 
 @dataclass
 class NerfactoModelConfig(ModelConfig):
@@ -115,7 +121,15 @@ class NerfactoModelConfig(ModelConfig):
     """Whether use single jitter or not for the proposal networks."""
     predict_normals: bool = False
     """Whether to predict normals or not."""
-
+    mono_normal_loss_mult: float = 0.0
+    mono_depth_loss_mult : float = 0.0
+    use_semantics: bool = False
+    num_semantic_classes: int = 32
+    ce_alpha: float = 0.85
+    ce_beta: float = 0.15
+    segment_batch: int = 32
+    semantic_loss_mult: float = 0.1
+    segment_loss_mult: float = 1.2
 
 class NerfactoModel(Model):
     """Nerfacto model
@@ -123,6 +137,7 @@ class NerfactoModel(Model):
     Args:
         config: Nerfacto configuration to instantiate model
     """
+
 
     config: NerfactoModelConfig
 
@@ -141,6 +156,8 @@ class NerfactoModel(Model):
             spatial_distortion=scene_contraction,
             num_images=self.num_train_data,
             use_pred_normals=self.config.predict_normals,
+            use_semantics=self.config.use_semantics,
+            num_semantic_classes=self.config.num_semantic_classes,
             use_average_appearance_embedding=self.config.use_average_appearance_embedding,
         )
 
@@ -190,11 +207,17 @@ class NerfactoModel(Model):
         )
         self.renderer_rgb = RGBRenderer(background_color=background_color)
         self.renderer_accumulation = AccumulationRenderer()
-        self.renderer_depth = DepthRenderer()
+        self.renderer_depth = DepthRenderer("expected")
         self.renderer_normals = NormalsRenderer()
+        if self.config.use_semantics:
+            self.renderer_semantics = SemanticRenderer()
+            self.semantic_loss = SCELoss(self.config.ce_alpha, self.config.ce_beta)
+            self.ce_loss = torch.nn.CrossEntropyLoss(reduction='none')
+            self.semantic_colors = torch.rand((self.config.num_semantic_classes, 3))
 
         # losses
         self.rgb_loss = MSELoss()
+        self.depth_loss = ScaleAndShiftInvariantLoss(alpha=0.5, scales=1)
 
         # metrics
         self.psnr = PeakSignalNoiseRatio(data_range=1.0)
@@ -239,6 +262,7 @@ class NerfactoModel(Model):
         return callbacks
 
     def get_outputs(self, ray_bundle: RayBundle):
+
         ray_samples, weights_list, ray_samples_list = self.proposal_sampler(ray_bundle, density_fns=self.density_fns)
         field_outputs = self.field(ray_samples, compute_normals=self.config.predict_normals)
         weights = ray_samples.get_weights(field_outputs[FieldHeadNames.DENSITY])
@@ -259,6 +283,13 @@ class NerfactoModel(Model):
             outputs["normals"] = self.renderer_normals(normals=field_outputs[FieldHeadNames.NORMALS], weights=weights)
             outputs["pred_normals"] = self.renderer_normals(field_outputs[FieldHeadNames.PRED_NORMALS], weights=weights)
 
+        if self.config.use_semantics:
+            outputs["semantics"] = self.renderer_semantics(
+                field_outputs[FieldHeadNames.SEMANTICS], weights=weights.detach()
+            )
+            outputs["semantics"] = outputs["semantics"] / (outputs["semantics"].sum(-1).unsqueeze(-1) + 1e-8)
+            outputs["semantics"] = torch.log(outputs["semantics"] + 1e-8)
+
         # These use a lot of GPU memory, so we avoid storing them for eval.
         if True or self.training:
             outputs["weights_list"] = weights_list
@@ -277,6 +308,26 @@ class NerfactoModel(Model):
 
         for i in range(self.config.num_proposal_iterations):
             outputs[f"prop_depth_{i}"] = self.renderer_depth(weights=weights_list[i], ray_samples=ray_samples_list[i])
+
+        return outputs
+
+    def get_semantics(self, ray_bundle: RayBundle):
+
+        if self.collider is not None:
+            ray_bundle = self.collider(ray_bundle)
+
+        ray_samples, weights_list, ray_samples_list = self.proposal_sampler(ray_bundle, density_fns=self.density_fns)
+        field_outputs = self.field(ray_samples, compute_normals=self.config.predict_normals)
+        weights = ray_samples.get_weights(field_outputs[FieldHeadNames.DENSITY])
+
+        outputs = {}
+
+        if self.config.use_semantics:
+            outputs["semantics"] = self.renderer_semantics(
+                field_outputs[FieldHeadNames.SEMANTICS], weights=weights.detach()
+            )
+            outputs["semantics"] = outputs["semantics"] / (outputs["semantics"].sum(-1).unsqueeze(-1) + 1e-8)
+            outputs["semantics"] = torch.log(outputs["semantics"] + 1e-8)
 
         return outputs
 
@@ -308,6 +359,42 @@ class NerfactoModel(Model):
                 loss_dict["pred_normal_loss"] = self.config.pred_normal_loss_mult * torch.mean(
                     outputs["rendered_pred_normal_loss"]
                 )
+
+                if "normal" in batch and self.config.mono_normal_loss_mult > 0.0:
+                    normal_gt = batch["normal"].to(self.device).reshape(-1, 3)
+                    normal_pred = outputs["normals"].to(self.device).reshape(-1, 3)
+                    loss_dict["normal_loss"] = (
+                        monosdf_normal_loss(normal_pred, normal_gt) * self.config.mono_normal_loss_mult
+                    )
+
+            if "depth" in batch and self.config.mono_depth_loss_mult > 0.0:
+                # TODO check it's true that's we sample from only a single image
+                # TODO only supervised pixel that hit the surface and remove hard-coded scaling for depth
+                depth_gt = batch["depth"].to(self.device)[..., None]
+                depth_pred = outputs["depth"]
+
+                mask = torch.ones_like(depth_gt).reshape(1, 32, -1).bool()
+                loss_dict["depth_loss"] = (
+                    self.depth_loss(depth_pred.reshape(1, 32, -1), (depth_gt * 50 + 0.5).reshape(1, 32, -1), mask)
+                    * self.config.mono_depth_loss_mult
+                )
+
+            if self.config.use_semantics:
+                loss_dict["semantic_loss"] = (self.semantic_loss(outputs["semantics"], batch["probability"]) * batch["confidence"]).mean() * self.config.semantic_loss_mult
+
+        if "segment" in outputs:
+            outputs_segment = outputs["segment"]
+            segments_confs = batch["segments_confs"]
+            segments_groups = batch["segments_groups"]
+            semantic_features = outputs_segment["semantics"]
+
+            batch_target_mean = torch.zeros(self.config.segment_batch, semantic_features.shape[-1],
+                                            device=semantic_features.device)
+            # scatter_mean(semantic_features, segments_groups, 0, batch_target_mean)
+            target = batch_target_mean[segments_groups, :].argmax(-1)
+
+            loss_dict["segment_loss"] = (self.ce_loss(semantic_features, target) * segments_confs).mean() * self.config.semantic_loss_mult * self.config.segment_loss_mult
+
         return loss_dict
 
     def get_image_metrics_and_images(
@@ -342,9 +429,11 @@ class NerfactoModel(Model):
 
         # normals to RGB for visualization. TODO: use a colormap
         if "normals" in outputs:
-            images_dict["normals"] = (outputs["normals"] + 1.0) / 2.0
+            images_dict["normals"] = torch.cat([(outputs["normals"] + 1.0) / 2.0], dim=1)
         if "pred_normals" in outputs:
             images_dict["pred_normals"] = (outputs["pred_normals"] + 1.0) / 2.0
+        if "normal" in batch:
+            images_dict["normals_mono"] = torch.cat([(batch["normal"] + 1.0) / 2.0], dim=1)
 
         for i in range(self.config.num_proposal_iterations):
             key = f"prop_depth_{i}"
@@ -353,5 +442,33 @@ class NerfactoModel(Model):
                 accumulation=outputs["accumulation"],
             )
             images_dict[key] = prop_depth_i
+
+        if "depth" in batch:
+            depth_gt = batch["depth"].to(self.device)
+            depth_pred = outputs["depth"]
+
+            # align to predicted depth and normalize
+            scale, shift = compute_scale_and_shift(
+                depth_pred[None, ..., 0], depth_gt[None, ...], depth_gt[None, ...] > 0.0
+            )
+            depth_pred = depth_pred * scale + shift
+
+            combined_depth = torch.cat([depth_gt[..., None], depth_pred], dim=1)
+            combined_depth = colormaps.apply_depth_colormap(combined_depth)
+        else:
+            depth = colormaps.apply_depth_colormap(
+                outputs["depth"],
+                accumulation=outputs["accumulation"],
+            )
+            combined_depth = torch.cat([depth], dim=1)
+
+        if "semantics" in outputs:
+            semantic_labels = torch.argmax(torch.nn.functional.softmax(outputs["semantics"], dim=-1), dim=-1, keepdim=True)
+            semantic_gt_labels = torch.argmax(torch.nn.functional.softmax(batch["probability"], dim=-1), dim=-1, keepdim=True)
+            vis_semantic = torch.cat([semantic_gt_labels, semantic_labels], dim=1)
+            vis_h, vis_w, _ = vis_semantic.shape
+            images_dict["semantics"] = self.semantic_colors[vis_semantic.reshape(-1)].reshape(vis_h, vis_w, 3)
+
+        images_dict["depth"] = combined_depth
 
         return metrics_dict, images_dict

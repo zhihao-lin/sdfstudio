@@ -186,6 +186,8 @@ class EvalDataloader(DataLoader):
         ray_bundle = self.cameras.generate_rays(camera_indices=image_idx, keep_shape=True)
         batch = self.input_dataset[image_idx]
         batch = get_dict_to_torch(batch, device=self.device, exclude=["image"])
+        c2w = self.cameras.camera_to_worlds[image_idx]
+        batch["c2w"] = c2w
         return ray_bundle, batch
 
 

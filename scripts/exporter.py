@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
 import numpy as np
-import open3d as o3d
+
 import torch
 import tyro
 from rich.console import Console

@@ -33,8 +33,8 @@ from nerfstudio.data.datamanagers.base_datamanager import (
     FlexibleDataManagerConfig,
     VanillaDataManagerConfig,
 )
-from nerfstudio.data.datamanagers.panoptic_datamanager import PanopticDataManagerConfig
 from nerfstudio.data.datamanagers.semantic_datamanager import SemanticDataManagerConfig
+from nerfstudio.data.datamanagers.panoptic_datamanager import PanopticDataManagerConfig
 from nerfstudio.data.datamanagers.variable_res_datamanager import (
     VariableResDataManagerConfig,
 )
@@ -47,26 +47,22 @@ from nerfstudio.data.dataparsers.phototourism_dataparser import (
     PhototourismDataParserConfig,
 )
 from nerfstudio.data.dataparsers.sdfstudio_dataparser import SDFStudioDataParserConfig
-from nerfstudio.engine.optimizers import (
-    AdamOptimizerConfig,
-    AdamWOptimizerConfig,
-    RAdamOptimizerConfig,
-)
+from nerfstudio.engine.optimizers import AdamOptimizerConfig, RAdamOptimizerConfig, AdamWOptimizerConfig
 from nerfstudio.engine.schedulers import (
     ExponentialSchedulerConfig,
     MultiStepSchedulerConfig,
-    MultiStepWarmupSchedulerConfig,
     NeuSSchedulerConfig,
+    MultiStepWarmupSchedulerConfig,
 )
 from nerfstudio.field_components.temporal_distortions import TemporalDistortionKind
 from nerfstudio.fields.sdf_field import SDFFieldConfig
-from nerfstudio.models.bakedangelo import BakedAngeloModelConfig
 from nerfstudio.models.bakedsdf import BakedSDFModelConfig
 from nerfstudio.models.dto import DtoOModelConfig
 from nerfstudio.models.instant_ngp import InstantNGPModelConfig
 from nerfstudio.models.mipnerf import MipNerfModel
 from nerfstudio.models.nerfacto import NerfactoModelConfig
 from nerfstudio.models.neuralangelo import NeuralangeloModelConfig
+from nerfstudio.models.bakedangelo import BakedAngeloModelConfig
 from nerfstudio.models.neuralreconW import NeuralReconWModelConfig
 from nerfstudio.models.neus import NeuSModelConfig
 from nerfstudio.models.neus_acc import NeuSAccModelConfig

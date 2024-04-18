@@ -17,30 +17,24 @@ Semantic datamanager.
 """
 
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Tuple, Type, Union
+from typing import Type
 
-import torch
-from rich.progress import Console
-
-from nerfstudio.cameras.rays import RayBundle
 from nerfstudio.data.datamanagers.base_datamanager import (
     VanillaDataManager,
     VanillaDataManagerConfig,
 )
-from nerfstudio.data.datasets.panoptic_dataset import (
-    PanopticDataset,
-    PanopticSegmentDataset,
-)
-
+from nerfstudio.data.datasets.panoptic_dataset import PanopticDataset, PanopticSegmentDataset
+from nerfstudio.cameras.rays import RayBundle
+from typing import Any, Dict, List, Optional, Tuple, Type, Union
+import torch
+from rich.progress import Console
 CONSOLE = Console(width=120)
-from torch.utils.data import DataLoader
-
 from nerfstudio.data.utils.dataloaders import (
     CacheDataloader,
     FixedIndicesEvalDataloader,
 )
 from nerfstudio.model_components.ray_generators import RayGenerator
-
+from torch.utils.data import DataLoader
 
 @dataclass
 class PanopticDataManagerConfig(VanillaDataManagerConfig):

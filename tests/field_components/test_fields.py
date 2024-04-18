@@ -11,12 +11,7 @@ def test_tcnn_instant_ngp_field():
     """Test the tiny-cuda-nn field"""
     # pylint: disable=import-outside-toplevel
     # pylint: disable=unused-import
-    try:
-        import tinycudann as tcnn
-    except ImportError as e:
-        # tinycudann module doesn't exist
-        print(e)
-        return
+    import tinycudann as tcnn
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     aabb_scale = 1.0
     aabb = torch.tensor(

@@ -274,6 +274,28 @@ def monosdf_normal_loss(normal_pred: torch.Tensor, normal_gt: torch.Tensor):
     cos = (1.0 - torch.sum(normal_pred * normal_gt, dim=-1)).mean()
     return l1 + cos
 
+class SCELoss(torch.nn.Module):
+
+    def __init__(self, alpha, beta):
+        super(SCELoss, self).__init__()
+        self.alpha = alpha
+        self.beta = beta
+        self.cross_entropy = torch.nn.CrossEntropyLoss(reduction='none')
+
+    def forward(self, pred, labels_probabilities):
+        # CCE
+        ce = self.cross_entropy(pred, labels_probabilities)
+
+        # RCE
+        pred = F.softmax(pred, dim=1)
+        pred = torch.clamp(pred, min=1e-8, max=1.0)
+        label_clipped = torch.clamp(labels_probabilities, min=1e-8, max=1.0)
+
+        rce = torch.sum(-1 * (pred * torch.log(label_clipped)), dim=1)
+
+        # Loss
+        loss = self.alpha * ce + self.beta * rce
+        return loss
 
 # copy from MiDaS
 def compute_scale_and_shift(prediction, target, mask):

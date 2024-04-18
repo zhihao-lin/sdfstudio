@@ -37,7 +37,9 @@ from nerfstudio.model_components.losses import interlevel_loss
 from nerfstudio.model_components.ray_samplers import ProposalNetworkSampler
 from nerfstudio.models.volsdf import VolSDFModel, VolSDFModelConfig
 from nerfstudio.utils import colormaps
-
+from nerfstudio.model_components.losses import (
+    monosdf_normal_loss,
+)
 
 @dataclass
 class BakedSDFModelConfig(VolSDFModelConfig):
@@ -90,6 +92,15 @@ class BakedSDFModelConfig(VolSDFModelConfig):
     eikonal_loss_mult_start: float = 0.01
     eikonal_loss_mult_end: float = 0.1
     eikonal_loss_mult_slop: float = 2.0
+
+def compute_scale_and_shift(prediction, target):
+    dr = prediction.reshape(-1, 1)
+    dr = torch.cat((dr, torch.ones_like(dr).to(dr.device)), -1).unsqueeze(-1) # (N, 2, 1)
+    left_part = torch.inverse(torch.sum(dr @ dr.transpose(1, 2), dim=0)).reshape(2, 2) # (2, 2)
+    right_part = torch.sum(dr*target.reshape(-1, 1, 1), dim=0).reshape(2, 1)
+    rs = left_part @ right_part
+    rs = rs.reshape(2)
+    return rs[0], rs[1]
 
 class BakedSDFFactoModel(VolSDFModel):
     """BakedSDF model
@@ -289,6 +300,35 @@ class BakedSDFFactoModel(VolSDFModel):
             loss_dict["interlevel_loss"] = self.config.interlevel_loss_mult * interlevel_loss(
                 outputs["weights_list"], outputs["ray_samples_list"]
             )
+
+            # monocular normal loss
+            if "normal" in batch and self.config.mono_normal_loss_mult > 0.0:
+                normal_gt = batch["normal"].to(self.device)
+                normal_pred = outputs["normal"]
+                loss_dict["normal_loss"] = (
+                        monosdf_normal_loss(normal_pred, normal_gt) * self.config.mono_normal_loss_mult
+                )
+
+            # monocular depth loss
+            if "depth" in batch and self.config.mono_depth_loss_mult > 0.0:
+                # TODO check it's true that's we sample from only a single image
+                # TODO only supervised pixel that hit the surface and remove hard-coded scaling for depth
+                depth_gt = batch["depth"].to(self.device)[..., None]
+                depth_pred = outputs["depth"]
+
+                mask = (depth_gt < 1.0).reshape(1, 32, -1)
+                # depth_gt = depth_gt[mask]
+                # depth_pred = depth_pred[mask]
+                #
+                # w, q = compute_scale_and_shift(depth_pred, depth_gt)
+                #
+                # loss_dict["depth_loss"] = (
+                #         (((w * depth_pred + q) - depth_gt) ** 2).sum() * self.config.mono_depth_loss_mult
+                # )
+                loss_dict["depth_loss"] = (
+                        self.depth_loss(depth_pred.reshape(1, 32, -1), (depth_gt * 50 + 0.5).reshape(1, 32, -1), mask)
+                        * self.config.mono_depth_loss_mult
+                )
 
         return loss_dict
 

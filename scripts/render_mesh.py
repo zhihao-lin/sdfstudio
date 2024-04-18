@@ -12,7 +12,7 @@ from typing import List
 import cv2
 import mediapy as media
 import numpy as np
-import open3d as o3d
+
 import torch
 import tyro
 from rich.console import Console

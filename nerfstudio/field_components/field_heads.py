@@ -186,7 +186,7 @@ class SemanticFieldHead(FieldHead):
     """
 
     def __init__(self, num_classes: int, in_dim: Optional[int] = None) -> None:
-        super().__init__(in_dim=in_dim, out_dim=num_classes, field_head_name=FieldHeadNames.SEMANTICS, activation=None)
+        super().__init__(in_dim=in_dim, out_dim=num_classes, field_head_name=FieldHeadNames.SEMANTICS, activation=torch.nn.Softmax(dim=-1))
 
 
 class PredNormalsFieldHead(FieldHead):
