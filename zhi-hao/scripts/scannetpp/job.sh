@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-#SBATCH --job-name=sdfstudio_scannetpp
+#SBATCH --job-name=bakedsdf-mesh
 #SBATCH --output=/projects/bcrp/cl121/sdfstudio/zhi-hao/scripts/scannetpp/debug.out
 #SBATCH --error=/projects/bcrp/cl121/sdfstudio/zhi-hao/scripts/scannetpp/debug.err
 #
