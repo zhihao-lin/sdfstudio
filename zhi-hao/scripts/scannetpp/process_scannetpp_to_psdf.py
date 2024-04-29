@@ -1,15 +1,18 @@
 import json
 import os
+from argparse import ArgumentParser
 
 import cv2
 import numpy as np
 from PIL import Image
 from tqdm import tqdm
 
-id = "4a1a3a7dc5"
+parser = ArgumentParser()
+parser.add_argument("--id", type=str, default="4a1a3a7dc5")
+args = parser.parse_args()
 
-data_dir = f"/hdd/datasets/scannetpp/data/{id}/dslr/"
-save_dir = f"/hdd/datasets/scannetpp/data/{id}/psdf/"
+data_dir = f"/hdd/datasets/scannetpp/data/{args.id}/dslr/"
+save_dir = f"/hdd/datasets/scannetpp/data/{args.id}/psdf/"
 
 os.makedirs(os.path.join(save_dir, "images"), exist_ok=True)
 camera_path = os.path.join(data_dir, "colmap", "cameras.txt")

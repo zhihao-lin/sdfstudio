@@ -1,18 +1,15 @@
 #!/bin/bash
 SCANNETPP_ROOT='/hdd/datasets/scannetpp'
-SCENE='4a1a3a7dc5'
+SCENE='7cd2ac43b4'
 SCANNETPP_DATA_DIR="${SCANNETPP_ROOT}/data/${SCENE}/dslr"
 OMNIDATA_ROOT='/hdd/omnidata'
 SDFSTUDIO_ROOT='/hdd/sdfstudio'
 
+python zhi-hao/scripts/scannetpp/process_scannetpp_to_psdf.py --id $SCENE
+
 # Extract monocular prior with Omnidata
 cd $OMNIDATA_ROOT
 conda activate omnidata
-
-# python -m omnidata_tools.torch.demo_sdfstudio \
-#   --task depth --mode patch --img_size 1024\
-#   --source_dir $SCANNETPP_DATA_DIR/undistorted_images \
-#   --output_dir $SCANNETPP_DATA_DIR/depth_omnidata
 
 python -m omnidata_tools.torch.demo_sdfstudio \
   --task normal \
