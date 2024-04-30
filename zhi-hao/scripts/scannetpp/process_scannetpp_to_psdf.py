@@ -113,3 +113,31 @@ for i in tqdm(range(len(paths))):
 
 with open(os.path.join(save_dir, "transforms.json"), "w") as f:
     json.dump(ns_json, f, indent=4)
+
+test_paths = []
+test_transforms = []
+for frame in tqdm(original_ns_json["test_frames"]):
+    name = frame["file_path"]
+    fisheye_path = os.path.join(data_dir, "resized_images", name)
+    save_path = os.path.join(save_dir, "images", name)
+    img = cv2.imread(fisheye_path)
+    undistorted_img = cv2.remap(img, map1, map2, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
+    undistorted_img = cv2.cvtColor(undistorted_img, cv2.COLOR_BGR2RGB)
+    undistorted_img = Image.fromarray(undistorted_img)
+    undistorted_img = undistorted_img.resize((int(MAX_W), int(H * (MAX_W / W))))
+    undistorted_img.save(save_path)
+
+    test_paths.append(os.path.join("images", name))
+    test_transforms.append(frame["transform_matrix"])
+
+test_transforms = np.array(test_transforms)
+ts = test_transforms[:, :3, -1]
+ts = (ts - center) * scale
+test_transforms[:, :3, -1] = ts
+
+for i in tqdm(range(len(test_paths))):
+    f = {"file_path": test_paths[i], "transform_matrix": test_transforms[i].tolist()}
+    ns_json["frames"].append(f)
+
+with open(os.path.join(save_dir, "transforms_all.json"), "w") as f:
+    json.dump(ns_json, f, indent=4)
