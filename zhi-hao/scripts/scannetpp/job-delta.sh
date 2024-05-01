@@ -1,11 +1,11 @@
 #!/bin/sh
 #
-#SBATCH --job-name=bakedsdf-mesh
+#SBATCH --job-name=empty
 #SBATCH --output=/projects/bcrp/cl121/sdfstudio/zhi-hao/scripts/scannetpp/debug.out
 #SBATCH --error=/projects/bcrp/cl121/sdfstudio/zhi-hao/scripts/scannetpp/debug.err
 #
 #SBATCH --account=bcrp-delta-gpu
-#SBATCH --partition=gpuA100x4
+#SBATCH --partition=gpuA40x4
 #SBATCH --time=2-0:00
 #SBATCH --mem=64GB
 #SBATCH --nodes=1
@@ -20,4 +20,5 @@ source /u/cl121/.bashrc
 
 conda activate sdfstudio
 cd /scratch/bcrp/cl121/sdfstudio
-bash zhi-hao/scripts/scannetpp/run.sh
+
+# empty
