@@ -1,5 +1,5 @@
 scenes=(
-    'outputs/scannetpp/240429_empty_bakedsdf-mlp/bakedsdf-mlp/2024-04-30_104016'
+    '/hdd/sdfstudio/outputs/scannetpp/240429_room_bakedsdf-mlp/bakedsdf-mlp/2024-04-29_123037'
 )
 
 for scene in "${scenes[@]}"; do
