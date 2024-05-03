@@ -29,3 +29,12 @@ for SCENE in "${SCNENES[@]}"; do
 
     rm ${SCANNETPP_ROOT}/data/${SCENE}/psdf/normal/*.npy
 done
+
+# for SCENE in "${SCNENES[@]}"; do
+#     echo "============== $SCENE =============="
+#     mkdir ${SCANNETPP_ROOT}/data/${SCENE}/psdf
+#     mv ${SCANNETPP_ROOT}/data/${SCENE}/images ${SCANNETPP_ROOT}/data/${SCENE}/psdf
+#     mv ${SCANNETPP_ROOT}/data/${SCENE}/normal ${SCANNETPP_ROOT}/data/${SCENE}/psdf
+#     mv ${SCANNETPP_ROOT}/data/${SCENE}/transforms.json ${SCANNETPP_ROOT}/data/${SCENE}/psdf
+#     mv ${SCANNETPP_ROOT}/data/${SCENE}/transforms_all.json ${SCANNETPP_ROOT}/data/${SCENE}/psdf
+# done
