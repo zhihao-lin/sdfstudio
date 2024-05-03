@@ -1,5 +1,7 @@
 scenes=(
-    '/hdd/sdfstudio/outputs/scannetpp/240429_room_bakedsdf-mlp/bakedsdf-mlp/2024-04-29_123037'
+    '/hdd/sdfstudio/outputs/scannetpp/240429_lab2_bakedsdf-mlp/bakedsdf-mlp/2024-04-29_122848'
+    '/hdd/sdfstudio/outputs/scannetpp/240429_office_bakedsdf-mlp/bakedsdf-mlp/2024-04-29_194612'
+    '/hdd/sdfstudio/outputs/scannetpp/240429_storage_bakedsdf-mlp/bakedsdf-mlp/2024-04-29_124328'
 )
 
 for scene in "${scenes[@]}"; do
