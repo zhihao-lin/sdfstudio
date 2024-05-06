@@ -1,7 +1,11 @@
 scenes=(
-    '/hdd/sdfstudio/outputs/scannetpp/240429_lab2_bakedsdf-mlp/bakedsdf-mlp/2024-04-29_122848'
-    '/hdd/sdfstudio/outputs/scannetpp/240429_office_bakedsdf-mlp/bakedsdf-mlp/2024-04-29_194612'
-    '/hdd/sdfstudio/outputs/scannetpp/240429_storage_bakedsdf-mlp/bakedsdf-mlp/2024-04-29_124328'
+    '/hdd/sdfstudio/outputs/scannetpp/240429_bathroom_bakedsdf-mlp/bakedsdf-mlp/2024-05-01_115823'
+    '/hdd/sdfstudio/outputs/scannetpp/240429_bathroom2_bakedsdf-mlp/bakedsdf-mlp/2024-05-01_115823'
+    '/hdd/sdfstudio/outputs/scannetpp/240429_game_bakedsdf-mlp/bakedsdf-mlp/2024-05-01_115848'
+    '/hdd/sdfstudio/outputs/scannetpp/240429_kitchen_bakedsdf-mlp/bakedsdf-mlp/2024-05-01_121846'
+    '/hdd/sdfstudio/outputs/scannetpp/240429_room2_bakedsdf-mlp/bakedsdf-mlp/2024-05-01_121814'
+    '/hdd/sdfstudio/outputs/scannetpp/240429_room3_bakedsdf-mlp/bakedsdf-mlp/2024-05-01_120411'
+    '/hdd/sdfstudio/outputs/scannetpp/240429_empty_bakedsdf-mlp/bakedsdf-mlp/2024-05-01_154020'
 )
 
 for scene in "${scenes[@]}"; do
