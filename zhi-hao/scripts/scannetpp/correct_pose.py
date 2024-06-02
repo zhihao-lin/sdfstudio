@@ -6,7 +6,7 @@ import cv2
 import numpy as np
 import trimesh
 
-# processed: bathroom, bathroom2, engine, game, lab, lab2, office
+# processed: bathroom, bathroom2, engine, game, lab, lab2, office, room2, room3
 
 def main():
     parser = ArgumentParser()

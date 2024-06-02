@@ -5,7 +5,11 @@ SDFSTUDIO_ROOT='/hdd/sdfstudio'
 
 
 SCNENES=(
-    '7e09430da7' '7eac902fd5' '45b0dac5e3' '036bce3393' '49a82360aa' '9859de300f'
+    '45b0dac5e3'
+    '036bce3393'
+    '0b031f3119'
+    '7e09430da7'
+    '49a82360aa'
 )
 
 
